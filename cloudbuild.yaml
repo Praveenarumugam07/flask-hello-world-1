@@ -39,7 +39,20 @@ steps:
         '--container-restart-policy=always'
       ]
 
-  # Step 4: Rolling update on MIG to use new template
+  # Step 4: Set MIG to use the new instance template
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args:
+      [
+        'compute',
+        'instance-groups',
+        'managed',
+        'set-instance-template',
+        '${_MIG_NAME}',
+        '--region=${_REGION}',
+        '--template=${_INSTANCE_TEMPLATE_NAME}-${SHORT_SHA}'
+      ]
+
+  # Step 5: Start rolling update for zero-downtime deployment
   - name: 'gcr.io/cloud-builders/gcloud'
     args:
       [
@@ -47,7 +60,7 @@ steps:
         'instance-groups',
         'managed',
         'rolling-action',
-        'replace',
+        'start-update',
         '${_MIG_NAME}',
         '--region=${_REGION}',
         '--version=template=${_INSTANCE_TEMPLATE_NAME}-${SHORT_SHA}',
