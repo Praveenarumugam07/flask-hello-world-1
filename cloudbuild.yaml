@@ -25,13 +25,13 @@ steps:
         'gcr.io/$PROJECT_ID/flask-hello-world:$SHORT_SHA'
       ]
 
-  # Step 3: Create new instance template with updated image
+  # Step 3: Create new instance template with container image
   - name: 'gcr.io/cloud-builders/gcloud'
     args:
       [
         'compute',
         'instance-templates',
-        'create',
+        'create-with-container',
         '${_INSTANCE_TEMPLATE_NAME}-${SHORT_SHA}',
         '--region=${_REGION}',
         '--machine-type=e2-micro',
@@ -57,7 +57,6 @@ steps:
 
 images:
   - 'gcr.io/$PROJECT_ID/flask-hello-world:$SHORT_SHA'
-
 
 options:
   logging: CLOUD_LOGGING_ONLY
