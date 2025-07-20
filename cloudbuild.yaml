@@ -9,6 +9,7 @@ substitutions:
 steps:
   # Step 1: Build Docker image
   - name: 'gcr.io/cloud-builders/docker'
+    id: Build Image
     args:
       [
         'build',
@@ -19,14 +20,16 @@ steps:
 
   # Step 2: Push Docker image
   - name: 'gcr.io/cloud-builders/docker'
+    id: Push Image
     args:
       [
         'push',
         'gcr.io/$PROJECT_ID/flask-hello-world:$SHORT_SHA'
       ]
 
-  # Step 3: Create new instance template with container image
+  # Step 3: Create instance template with container image
   - name: 'gcr.io/cloud-builders/gcloud'
+    id: Create Instance Template
     args:
       [
         'compute',
@@ -38,8 +41,35 @@ steps:
         '--container-restart-policy=always'
       ]
 
-  # Step 4: Set MIG to use the new instance template
+  # Step 4: Check if MIG exists
   - name: 'gcr.io/cloud-builders/gcloud'
+    id: Check MIG
+    entrypoint: 'bash'
+    args:
+      [
+        '-c',
+        'gcloud compute instance-groups managed describe ${_MIG_NAME} --zone=${_ZONE} || echo "MIG_NOT_FOUND"'
+      ]
+
+  # Step 5: Create MIG if not exists
+  - name: 'gcr.io/cloud-builders/gcloud'
+    id: Create MIG if not exists
+    entrypoint: 'bash'
+    args:
+      [
+        '-c',
+        'if ! gcloud compute instance-groups managed describe ${_MIG_NAME} --zone=${_ZONE}; then
+          gcloud compute instance-groups managed create ${_MIG_NAME}
+            --base-instance-name=flask-instance
+            --template=${_INSTANCE_TEMPLATE_NAME}-${SHORT_SHA}
+            --size=1
+            --zone=${_ZONE};
+        fi'
+      ]
+
+  # Step 6: Update MIG instance template
+  - name: 'gcr.io/cloud-builders/gcloud'
+    id: Update MIG template
     args:
       [
         'compute',
@@ -51,8 +81,9 @@ steps:
         '--template=${_INSTANCE_TEMPLATE_NAME}-${SHORT_SHA}'
       ]
 
-  # Step 5: Start rolling update for zero-downtime deployment
+  # Step 7: Start rolling update
   - name: 'gcr.io/cloud-builders/gcloud'
+    id: Rolling Update MIG
     args:
       [
         'compute',
