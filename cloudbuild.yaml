@@ -1,7 +1,7 @@
 # cloudbuild.yaml
 
 substitutions:
-  _REGION: asia-south1
+  _ZONE: asia-south1-a
   _INSTANCE_TEMPLATE_NAME: flask-template
   _MIG_NAME: flask-mig
   _PROJECT_ID: $PROJECT_ID
@@ -33,7 +33,6 @@ steps:
         'instance-templates',
         'create-with-container',
         '${_INSTANCE_TEMPLATE_NAME}-${SHORT_SHA}',
-        '--region=${_REGION}',
         '--machine-type=e2-micro',
         '--container-image=gcr.io/$PROJECT_ID/flask-hello-world:$SHORT_SHA',
         '--container-restart-policy=always'
@@ -48,7 +47,7 @@ steps:
         'managed',
         'set-instance-template',
         '${_MIG_NAME}',
-        '--region=${_REGION}',
+        '--zone=${_ZONE}',
         '--template=${_INSTANCE_TEMPLATE_NAME}-${SHORT_SHA}'
       ]
 
@@ -62,7 +61,7 @@ steps:
         'rolling-action',
         'start-update',
         '${_MIG_NAME}',
-        '--region=${_REGION}',
+        '--zone=${_ZONE}',
         '--version=template=${_INSTANCE_TEMPLATE_NAME}-${SHORT_SHA}',
         '--max-surge=1',
         '--max-unavailable=0'
